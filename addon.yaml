@@ -1,0 +1,39 @@
+# GitHub watch: one entry per repository. Reads its pull requests and Actions runs with GET calls only
+# (Core's `gh` login, or a read-only token) and turns what changed into short lines for a team chat:
+# PR opened / merged / closed and its CI result (pr_channel), each deploy workflow's result in its own
+# channel (deploys), and every failure in one channel (alerts_channel). They go out through the add-on that
+# provides chat_messages (Hisho's Discord add-on) only with post: true; until then they are journaled and
+# listed on the page as "would post". It never writes to GitHub and never looks at what a deploy deploys to.
+#   hisho addon entry github-watch app repo=owner/name pr_channel=pull-requests deploys="Deploy Dev=dev-testing"
+name: github-watch
+kind: integration
+title: GitHub watch
+description: A repository's pull requests, CI and deploy runs, as short posts in your team chat (read only on GitHub).
+version: 0.1.1
+you_need:
+  - "A GitHub repository you can read (Core's `gh` login, or a read-only fine-grained token)"
+  - "A chat add-on that provides `chat_messages` (the Discord add-on)"
+provider: provider.py
+requires: {capabilities: [chat_messages]}
+entry_label: repository
+secret_rotate: GitHub > Settings > Developer settings > Fine-grained tokens (read-only Pull requests, Actions, Metadata)
+entry_schema:
+  repo: str                  # owner/name
+  token: "secret?"           # a read-only token's secret NAME; without it Core's `gh` login is used (GET calls only)
+  pr_channel: "str?"         # PR opened / merged / closed and CI passing on a PR
+  ci_workflow: "str?"        # the CI workflow's name (default CI)
+  deploys: "str?"            # deploy workflows and their channels: "Deploy Dev=dev-testing, Deploy Prod=prod-releases"
+  alerts_channel: "str?"     # CI and deploy failures (also the deploy's own channel)
+  post: "bool?"              # true = post; otherwise only journal and list them on the page (default false)
+  chat_server: "str?"        # the chat add-on's entry, only when it has several
+  note: "str?"
+entry_form:
+  repo: "Repository (owner/name)"
+  token: "Read-only token (its secret's name; empty = Core's gh login)"
+  pr_channel: "Channel for pull requests"
+  ci_workflow: "CI workflow name (default CI)"
+  deploys: "Deploy workflows = channel (comma-separated)"
+  alerts_channel: "Channel for failures"
+  post: "Post (true) or only list (false)"
+  chat_server: "Chat server (only if several)"
+  note: "Note"
