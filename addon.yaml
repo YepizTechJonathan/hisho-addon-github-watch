@@ -9,7 +9,7 @@ name: github-watch
 kind: integration
 title: GitHub watch
 description: A repository's pull requests, CI and deploy runs, as short posts in your team chat (read only on GitHub).
-version: 0.1.1
+version: 0.1.2
 you_need:
   - "A GitHub repository you can read (Core's `gh` login, or a read-only fine-grained token)"
   - "A chat add-on that provides `chat_messages` (the Discord add-on)"
@@ -37,3 +37,30 @@ entry_form:
   post: "Post (true) or only list (false)"
   chat_server: "Chat server (only if several)"
   note: "Note"
+
+help:
+  repo:
+    label: Repository
+    say: "The repository to watch, written owner/name, like example-org/website."
+  token:
+    label: Read-only token (secret name)
+    say: "Optional. A fine-grained GitHub token for only this repository, read-only: Pull requests, Actions and Metadata. Save it as a Hisho secret and type the secret's name. Empty uses the GitHub login already on Hisho Core."
+    get: "https://github.com/settings/personal-access-tokens/new"
+    get_label: Make a token on GitHub
+  pr_channel:
+    label: Pull request channel
+    say: "The chat channel for pull requests opened, merged or closed, and their test results, like pull-requests."
+  ci_workflow:
+    label: CI workflow name
+    say: "The name of the workflow that tests pull requests, as shown on the repository's Actions tab. Empty means CI."
+  deploys:
+    say: "Each deploy workflow and the channel for its results, separated by commas, like Deploy Dev=dev-testing, Deploy Prod=prod-releases."
+  alerts_channel:
+    label: Failures channel
+    say: "The channel where every failed test or deploy is posted too."
+  post:
+    say: "On: Hisho posts to the chat. Off: it only lists what it would post on its page, so you can check first."
+  chat_server:
+    say: "Only if your chat add-on has more than one server: the name of the entry to post through."
+  note:
+    say: "Anything that helps you remember this repository."
