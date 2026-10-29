@@ -9,7 +9,7 @@ name: github-watch
 kind: integration
 title: GitHub watch
 description: A repository's pull requests, CI and deploy runs, as short posts in your team chat (read only on GitHub).
-version: 0.2.0
+version: 0.2.1
 you_need:
   - "A GitHub repository you can read (this machine's GitHub sign-in from Hisho's setup, or a read-only fine-grained token)"
   - "A chat add-on that provides `chat_messages` (the Discord add-on)"
@@ -64,3 +64,9 @@ help:
     say: "Only if your chat add-on has more than one server: the name of the entry to post through."
   note:
     say: "Anything that helps you remember this repository."
+
+# Found: your repositories, from this machine's GitHub sign-in (never a network search); without a sign-in the page
+# offers GitHub's sign-in button
+find:
+  title: "Your GitHub repositories"
+  empty: "All your repositories are watched already, or GitHub didn't answer just now."

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- The Add box lists your GitHub repositories (never a network search); without a GitHub sign-in on this machine it shows the Sign in with GitHub button.
+
 ## 0.2.0
 
 - Your repositories are listed on the page ("Found", from this machine's GitHub sign-in, newest first, ones already

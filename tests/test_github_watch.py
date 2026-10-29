@@ -193,19 +193,27 @@ class GhCtx:
 
 
 REPOS = "gh api --method GET user/repos?per_page=100&sort=pushed"
+SIGNED_IN = {"gh auth status --hostname github.com": ("", 0)}
 
 
 def test_found_lists_your_repositories_not_watched_yet(mod):
-    ctx = GhCtx({REPOS: (json.dumps([{"full_name": "acme/app"}, {"full_name": "acme/site"},
+    ctx = GhCtx({**SIGNED_IN, REPOS: (json.dumps([{"full_name": "acme/app"}, {"full_name": "acme/site"},
                                      {"full_name": "acme/old", "archived": True}, {"full_name": "bad name"}]), 0)})
     got = mod.discover(ENTRY, ctx)
     assert got == [{"title": "acme/site", "name": "site", "fill": {"repo": "acme/site"}}]
-    assert ctx.calls == [REPOS.split(" ")]                        # one GET, nothing else
+    assert ctx.calls[1:] == [REPOS.split(" ")]                    # one GET after the sign-in check, nothing else
 
 
 @pytest.mark.parametrize("answer", [("", 1), ("not json", 0), ("{}", 0)])
-def test_found_is_quiet_without_a_sign_in_or_an_answer(mod, answer):
-    assert mod.discover({}, GhCtx({REPOS: answer})) == []
+def test_found_is_quiet_when_github_doesnt_answer(mod, answer):
+    assert mod.discover({}, GhCtx({**SIGNED_IN, REPOS: answer})) == []
+
+
+def test_without_a_sign_in_the_page_offers_githubs_sign_in_never_a_network_search(mod, addon):
+    got = mod.discover({}, GhCtx({}))                               # gh auth status fails: not signed in
+    assert got["items"] == [] and got["need"]["button"] == "github-signin"
+    assert not addon.manifest.get("discover")                       # no network probes at all
+    assert addon.manifest["find"]["title"] == "Your GitHub repositories"
 
 
 def test_no_token_and_no_sign_in_says_what_to_do(mod):

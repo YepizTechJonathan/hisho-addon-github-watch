@@ -316,11 +316,17 @@ def test(entry: dict[str, Any], ctx: Any) -> dict[str, Any]:
 def discover(entries: dict[str, dict[str, Any]], ctx: Any) -> list[dict[str, Any]]:
     """The page's "Found" list: your repositories (this machine's GitHub sign-in) not watched yet, newest pushed
     first. Quiet when there is no sign-in or GitHub doesn't answer: finding is a help, never a failure."""
+    need = {"items": [], "need": {"say": "Sign in to GitHub on this machine and your repositories are listed here "
+                                         "to pick from. No token to make.", "button": "github-signin"}}
     try:
+        if ctx.run(["gh", "auth", "status", "--hostname", "github.com"], timeout=20).returncode:
+            return need                  # not signed in: the page shows GitHub's sign-in button
         res = ctx.run(["gh", "api", "--method", "GET", "user/repos?per_page=100&sort=pushed"], timeout=30)
         if res.returncode:
             return []
         repos = json.loads(res.stdout or "[]")
+    except FileNotFoundError:
+        return need
     except (OSError, subprocess.TimeoutExpired, ValueError):
         return []
     watched = {str(e.get("repo") or "").lower() for e in (entries or {}).values()}
