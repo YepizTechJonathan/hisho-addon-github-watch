@@ -285,10 +285,48 @@ def details(entries: dict[str, dict[str, Any]], ctx: Any) -> list[dict[str, Any]
     return sections
 
 
+def signed_in(ctx: Any) -> bool:
+    """Whether this machine's GitHub sign-in (``gh``, set up by Hisho's wizard) is there. The token it prints is
+    thrown away: ``gh api`` uses the sign-in itself."""
+    try:
+        res = ctx.run(["gh", "auth", "token"], timeout=15)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return res.returncode == 0 and bool((res.stdout or "").strip())
+
+
 def test(entry: dict[str, Any], ctx: Any) -> dict[str, Any]:
     try:
         repo = fetch(entry, ctx, "")
     except WatchError as exc:
-        return {"ok": False, "error": str(exc)}
-    return {"ok": True, "message": f"Can read {repo['full_name']} ({repo.get('visibility')}, default branch "
+        out: dict[str, Any] = {"ok": False, "error": str(exc)}
+        if not entry.get("token") and not signed_in(ctx):
+            out["explain"] = ("This machine isn't signed in to GitHub, and no token was given. Either sign in once "
+                              "(Hisho's setup wizard, or `gh auth login` on the Core machine), or paste a read-only "
+                              "token for this repository (the link beside Token makes one).")
+        elif "404" in str(exc) or "Not Found" in str(exc):
+            out["explain"] = (f"GitHub doesn't show {entry.get('repo')} to this sign-in: check it is written "
+                              "owner/name, and that the account (or token) can read it.")
+        return out
+    how = "with the token" if entry.get("token") else "with this machine's GitHub sign-in"
+    return {"ok": True, "message": f"Can read {repo['full_name']} {how} ({repo.get('visibility')}, default branch "
                                    f"{repo.get('default_branch')})"}
+
+
+def discover(entries: dict[str, dict[str, Any]], ctx: Any) -> list[dict[str, Any]]:
+    """The page's "Found" list: your repositories (this machine's GitHub sign-in) not watched yet, newest pushed
+    first. Quiet when there is no sign-in or GitHub doesn't answer: finding is a help, never a failure."""
+    try:
+        res = ctx.run(["gh", "api", "--method", "GET", "user/repos?per_page=100&sort=pushed"], timeout=30)
+        if res.returncode:
+            return []
+        repos = json.loads(res.stdout or "[]")
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        return []
+    watched = {str(e.get("repo") or "").lower() for e in (entries or {}).values()}
+    out = []
+    for r in repos if isinstance(repos, list) else []:
+        name = str((r or {}).get("full_name") or "")
+        if re.match(r"^[\w.-]+/[\w.-]+$", name) and name.lower() not in watched and not r.get("archived"):
+            out.append({"title": name, "name": name.split("/")[1], "fill": {"repo": name}})
+    return out

@@ -13,13 +13,13 @@ It reads GitHub with GET calls only (no comments, reviews, merges or re-runs) an
 ## What it needs
 
 - You need:
-  - A GitHub repository you can read (Core's `gh` login, or a read-only fine-grained token)
+  - A GitHub repository you can read (this machine's GitHub sign-in from Hisho's setup, or a read-only fine-grained token)
   - A chat add-on that provides `chat_messages` (the Discord add-on)
 - Runs on: the Core machine, inside Hisho Core
 - An add-on that provides: `chat_messages`
 - One entry per repository, each with:
   - `repo` (str, required)
-  - `token` (secret name, optional)
+  - `token` (password, kept as a local secret, optional)
   - `pr_channel` (str, optional)
   - `ci_workflow` (str, optional)
   - `deploys` (str, optional)
@@ -42,12 +42,16 @@ before.
 
 ## How to use
 
-Add a repository on its page (**Add-ons > GitHub watch**) with the channels to post to. Until the entry says `post: true`, each line is only listed on the page as **would post**, so you can check the wording first; then turn posting on.
+Add a repository on its page (**Add-ons > GitHub watch**) with the channels to post to. When the Core machine is
+signed in to GitHub (Hisho's setup wizard, or `gh auth login`), the page lists your repositories that aren't watched
+yet: **Use this** fills in the repository, and the token can stay empty (Hisho reads with that sign-in, GET calls
+only). Without that sign-in, paste a fine-grained read-only token for the repository (Pull requests, Actions,
+Metadata). Until the entry says `post: true`, each line is only listed on the page as **would post**, so you can check the wording first; then turn posting on.
 
 ## Settings
 
-On its page (**Add-ons > Github Watch**), or in `~/Hisho/System/Config/Addons/github-watch.yaml`. Secrets
-are given by name, never by value.
+On its page (**Add-ons > Github Watch**), or in `~/Hisho/System/Config/Addons/github-watch.yaml`. A token pasted
+on the page is kept as a local secret on the Core machine; in the file, secrets are given by name, never by value.
 
 ## How to remove
 

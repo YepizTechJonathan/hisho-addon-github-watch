@@ -9,9 +9,9 @@ name: github-watch
 kind: integration
 title: GitHub watch
 description: A repository's pull requests, CI and deploy runs, as short posts in your team chat (read only on GitHub).
-version: 0.1.2
+version: 0.2.0
 you_need:
-  - "A GitHub repository you can read (Core's `gh` login, or a read-only fine-grained token)"
+  - "A GitHub repository you can read (this machine's GitHub sign-in from Hisho's setup, or a read-only fine-grained token)"
   - "A chat add-on that provides `chat_messages` (the Discord add-on)"
 provider: provider.py
 requires: {capabilities: [chat_messages]}
@@ -19,7 +19,7 @@ entry_label: repository
 secret_rotate: GitHub > Settings > Developer settings > Fine-grained tokens (read-only Pull requests, Actions, Metadata)
 entry_schema:
   repo: str                  # owner/name
-  token: "secret?"           # a read-only token's secret NAME; without it Core's `gh` login is used (GET calls only)
+  token: "password?"         # a read-only token (pasted: a local secret) or its secret's NAME; empty = Core's `gh` sign-in (GET calls only)
   pr_channel: "str?"         # PR opened / merged / closed and CI passing on a PR
   ci_workflow: "str?"        # the CI workflow's name (default CI)
   deploys: "str?"            # deploy workflows and their channels: "Deploy Dev=dev-testing, Deploy Prod=prod-releases"
@@ -29,7 +29,7 @@ entry_schema:
   note: "str?"
 entry_form:
   repo: "Repository (owner/name)"
-  token: "Read-only token (its secret's name; empty = Core's gh login)"
+  token: "Read-only token (empty = this machine's GitHub sign-in)"
   pr_channel: "Channel for pull requests"
   ci_workflow: "CI workflow name (default CI)"
   deploys: "Deploy workflows = channel (comma-separated)"
@@ -41,10 +41,10 @@ entry_form:
 help:
   repo:
     label: Repository
-    say: "The repository to watch, written owner/name, like example-org/website."
+    say: "The repository to watch, written owner/name, like example-org/website. When this machine is signed in to GitHub, your repositories are listed above the form: press Use this on one."
   token:
-    label: Read-only token (secret name)
-    say: "Optional. A fine-grained GitHub token for only this repository, read-only: Pull requests, Actions and Metadata. Save it as a Hisho secret and type the secret's name. Empty uses the GitHub login already on Hisho Core."
+    label: Read-only token
+    say: "Leave it empty when this machine is signed in to GitHub (Hisho's setup wizard does that): Hisho uses that sign-in, reading only. Otherwise make a fine-grained token for only this repository, read-only: Pull requests, Actions and Metadata, and paste it here (or type the name of a secret you saved it under)."
     get: "https://github.com/settings/personal-access-tokens/new"
     get_label: Make a token on GitHub
   pr_channel:

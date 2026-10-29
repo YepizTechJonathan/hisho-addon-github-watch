@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Your repositories are listed on the page ("Found", from this machine's GitHub sign-in, newest first, ones already
+  watched left out): Use this fills in the repository. Quiet when there is no sign-in.
+- The token stays optional and can now be pasted (kept as a local secret); a secret's name still works. Test says
+  which sign-in it used, and when neither works, what to do (sign in once, or paste a read-only token).
+
 ## 0.1.2
 
 - Every field on its setup form says in plain words what it is, and links to where to get it (addon.yaml `help:`, shown by Hisho's dashboard).

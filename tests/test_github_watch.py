@@ -158,6 +158,7 @@ def test_github_unreadable_is_a_warning(mod, gh, addon, ctx_for, monkeypatch):
     def broken(*a):
         raise mod.WatchError("gh api /pulls: HTTP 404")
     monkeypatch.setattr(mod, "fetch", broken)
+    monkeypatch.setattr(mod, "signed_in", lambda ctx: True)   # never the real gh here
     s = mod.summary(ENTRY, ctx_for(addon))
     assert [p["title"] for p in s["problems"]] == ["app: can't read GitHub"]
     assert mod.test(ENTRY["app"], ctx_for(addon))["ok"] is False
@@ -176,3 +177,46 @@ def test_github_is_only_ever_read(addon, ctx_for, monkeypatch):
     src = (HERE / "provider.py").read_text()
     for verb in ("POST", "PATCH", "PUT", "DELETE"):
         assert f'"{verb}"' not in src and f"'{verb}'" not in src
+
+
+
+class GhCtx:
+    """This machine's `gh`, stood in for: what each command prints and its exit code."""
+
+    def __init__(self, answers):
+        self.answers, self.calls = answers, []
+
+    def run(self, cmd, timeout=30):
+        self.calls.append(cmd)
+        out, rc = self.answers.get(" ".join(cmd), ("", 1))
+        return subprocess.CompletedProcess(cmd, rc, out, "")
+
+
+REPOS = "gh api --method GET user/repos?per_page=100&sort=pushed"
+
+
+def test_found_lists_your_repositories_not_watched_yet(mod):
+    ctx = GhCtx({REPOS: (json.dumps([{"full_name": "acme/app"}, {"full_name": "acme/site"},
+                                     {"full_name": "acme/old", "archived": True}, {"full_name": "bad name"}]), 0)})
+    got = mod.discover(ENTRY, ctx)
+    assert got == [{"title": "acme/site", "name": "site", "fill": {"repo": "acme/site"}}]
+    assert ctx.calls == [REPOS.split(" ")]                        # one GET, nothing else
+
+
+@pytest.mark.parametrize("answer", [("", 1), ("not json", 0), ("{}", 0)])
+def test_found_is_quiet_without_a_sign_in_or_an_answer(mod, answer):
+    assert mod.discover({}, GhCtx({REPOS: answer})) == []
+
+
+def test_no_token_and_no_sign_in_says_what_to_do(mod):
+    ctx = GhCtx({"gh auth token": ("", 1)})                     # gh api fails too (no answer given)
+    got = mod.test({"repo": "acme/app"}, ctx)
+    assert not got["ok"] and "isn't signed in to GitHub" in got["explain"]
+    ok = GhCtx({"gh api --method GET repos/acme/app": (json.dumps({"full_name": "acme/app"}), 0)})
+    assert "this machine's GitHub sign-in" in mod.test({"repo": "acme/app"}, ok)["message"]
+
+
+def test_the_page_offers_found_and_the_token_may_be_pasted(addon):
+    from hisho import connect
+    assert connect.view(addon)["discover"] is True
+    assert addon.manifest["entry_schema"]["token"] == "password?"
